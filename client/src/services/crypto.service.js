@@ -8,16 +8,16 @@ const getKeys = () => {
     return api.get('/crypto/keys');
 };
 
-const encrypt = (message, keyId) => {
-    return api.post('/crypto/encrypt', { message, keyId });
+const encrypt = (plaintext, keyId) => {
+    return api.post('/crypto/encrypt', { plaintext, keyId });
 };
 
-const decrypt = (ciphertexts, keyId) => {
-    return api.post('/crypto/decrypt', { ciphertexts, keyId });
+const decrypt = (messageId, keyId) => {
+    return api.post('/crypto/decrypt', { messageId, keyId });
 };
 
-const cloudMultiply = (ciphertexts, n) => {
-    return api.post('/crypto/cloud/homomorphic', { ciphertexts, n });
+const cloudMultiply = (messageId, keyId) => {
+    return api.post('/crypto/cloud/homomorphic', { messageId, keyId });
 };
 
 const CryptoService = {

@@ -3,15 +3,22 @@
 
 const homomorphicMultiply = (ciphertexts, n) => {
     n = BigInt(n);
-    if (!ciphertexts || ciphertexts.length === 0) return 0n;
+    if (!ciphertexts || ciphertexts.length === 0) return { product: 0n, breakdown: "0" };
 
     let product = 1n;
+    let components = [];
     for (let c of ciphertexts) {
         c = BigInt(c);
+        components.push(c.toString());
         product = (product * c) % n;
     }
 
-    return product;
+    const breakdown = `(${components.join(" × ")}) mod ${n} = ${product}`;
+
+    return {
+        product,
+        breakdown
+    };
 };
 
 module.exports = {

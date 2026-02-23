@@ -1,104 +1,197 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import AuthService from '../services/auth.service';
+import AutoDemoService from '../services/autodemo.service';
+import { useNavigate } from 'react-router-dom';
+import {
+    Key,
+    Lock,
+    Cloud,
+    Unlock,
+    LogOut,
+    ArrowRight,
+    Play,
+    Loader2
+} from 'lucide-react';
+
 import KeyGenPanel from '../components/KeyGenPanel';
 import EncryptionPanel from '../components/EncryptionPanel';
 import CloudPanel from '../components/CloudPanel';
 import DecryptionPanel from '../components/DecryptionPanel';
-import AdminLogViewer from '../components/AdminLogViewer';
-import PerformanceAnalytics from '../components/PerformanceAnalytics';
-import { Key, Lock, Cloud, Unlock, LogOut, LayoutDashboard, ShieldAlert, Activity } from 'lucide-react';
-import { motion } from 'framer-motion';
 
 const Dashboard = () => {
-    const [activeTab, setActiveTab] = useState('keygen');
+
+    const [activeTab, setActiveTab] = useState("key");
+    const [isDemoRunning, setIsDemoRunning] = useState(false);
+    const [cryptoData, setCryptoData] = useState({
+        keyId: localStorage.getItem('last_key_id') || null,
+        messageId: localStorage.getItem('last_message_id') || null,
+        ciphertext: null
+    });
+
     const user = AuthService.getCurrentUser();
     const navigate = useNavigate();
 
-    const handleLogout = () => {
+    const logout = () => {
         AuthService.logout();
-        navigate('/login');
+        navigate("/login");
     };
 
-    const tabs = [
-        { id: 'keygen', label: 'Key Generation', icon: Key },
-        { id: 'encrypt', label: 'Encryption', icon: Lock },
-        { id: 'cloud', label: 'Cloud Simulation', icon: Cloud },
-        { id: 'decrypt', label: 'Decryption', icon: Unlock },
-        { id: 'admin', label: 'Admin Logs', icon: ShieldAlert },
-        { id: 'analytics', label: 'Performance', icon: Activity },
-    ];
+    const runAutomatedDemo = async () => {
+        setIsDemoRunning(true);
+        try {
+            await AutoDemoService.runFullDemo(
+                (step) => setActiveTab(step),
+                (step, data, keyId, messageId) => {
+                    if (keyId) {
+                        setCryptoData(prev => ({ ...prev, keyId }));
+                        localStorage.setItem('last_key_id', keyId);
+                    }
+                    if (messageId) {
+                        setCryptoData(prev => ({ ...prev, messageId }));
+                        localStorage.setItem('last_message_id', messageId);
+                    }
+                }
+            );
+        } catch (err) {
+            console.error('Demo failed:', err);
+        } finally {
+            setIsDemoRunning(false);
+        }
+    };
 
     return (
-        <div className="min-h-screen bg-slate-900 text-slate-100 flex">
-            {/* Sidebar */}
-            <aside className="w-64 bg-slate-950 border-r border-white/5 flex flex-col">
-                <div className="p-6 border-b border-white/5">
-                    <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent flex items-center gap-2">
-                        <LayoutDashboard className="w-6 h-6 text-primary" />
-                        CryptoCloud
-                    </h1>
-                </div>
+        <div className="min-h-screen text-white bg-[#020617]">
 
-                <nav className="flex-1 p-4 space-y-2">
-                    {tabs.map((tab) => (
-                        <button
-                            key={tab.id}
-                            onClick={() => setActiveTab(tab.id)}
-                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === tab.id
-                                    ? 'bg-primary/10 text-primary border border-primary/20'
-                                    : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
-                                }`}
-                        >
-                            <tab.icon className="w-5 h-5" />
-                            {tab.label}
-                        </button>
-                    ))}
-                </nav>
+            {/* HEADER: Centered Heading with Absolute Profile */}
+            <div className="py-20 flex flex-col items-center justify-center text-center relative">
+                <div className="w-2 h-12 bg-white rounded-[4px] mb-8"></div>
+                <h1 className="text-4xl font-black uppercase tracking-tighter text-white leading-none max-w-4xl">
+                    Next Gen Cloud Security Using <span className="text-white/40">Pell-Based RSA with Homomorphic Encryption</span>
+                </h1>
 
-                <div className="p-4 border-t border-white/5">
-                    <div className="flex items-center gap-3 px-4 py-3 mb-2">
-                        <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-sm font-bold text-slate-400">
-                            {user?.username?.charAt(0).toUpperCase()}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-white truncate">{user?.username}</p>
-                            <p className="text-xs text-slate-500 truncate">User</p>
-                        </div>
+                {/* Profile Info - Absolute Top-Right */}
+                <div className="absolute top-10 right-10 flex items-center gap-6">
+                    <div className="text-right">
+                        <div className="font-extrabold text-sm leading-tight text-white">{user?.username}</div>
+                        <div className="text-white/40 text-[10px] font-black tracking-[0.1em] uppercase">{user?.role}</div>
                     </div>
+                    <div className="h-6 w-px bg-white/10"></div>
                     <button
-                        onClick={handleLogout}
-                        className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors"
+                        onClick={logout}
+                        className="p-2 border border-white/10 rounded-[4px] bg-white/5 hover:bg-red-500/20 hover:border-red-500/30 text-white/60 hover:text-red-400 transition-all active:scale-90"
+                        title="Sign Out"
                     >
-                        <LogOut className="w-4 h-4" />
-                        Sign Out
+                        <LogOut size={16} />
                     </button>
                 </div>
-            </aside>
+            </div>
 
-            {/* Main Content */}
-            <main className="flex-1 overflow-y-auto bg-[url('https://grainy-gradients.vercel.app/noise.svg')]">
-                <div className="max-w-7xl mx-auto p-8">
-                    <header className="mb-8">
-                        <h2 className="text-3xl font-bold text-white mb-2">{tabs.find(t => t.id === activeTab)?.label}</h2>
-                        <p className="text-slate-400">Manage your secure operations</p>
-                    </header>
+            {/* DEMO BUTTON */}
+            <div className="flex justify-center mb-8">
+                <button
+                    onClick={runAutomatedDemo}
+                    disabled={isDemoRunning}
+                    className="btn-secondary flex items-center gap-3"
+                >
+                    {isDemoRunning ? <Loader2 size={20} className="animate-spin" /> : <Play size={20} />}
+                    {isDemoRunning ? 'Running Demo...' : 'Start Full Security Demo'}
+                </button>
+            </div>
 
-                    <motion.div
-                        key={activeTab}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.3 }}
-                    >
-                        {activeTab === 'keygen' && <KeyGenPanel />}
-                        {activeTab === 'encrypt' && <EncryptionPanel />}
-                        {activeTab === 'cloud' && <CloudPanel />}
-                        {activeTab === 'decrypt' && <DecryptionPanel />}
-                        {activeTab === 'admin' && <AdminLogViewer />}
-                        {activeTab === 'analytics' && <PerformanceAnalytics />}
-                    </motion.div>
+            {/* NAVIGATION: Progress Tracker with Continuous Borders */}
+            <nav
+                style={{ display: 'flex', flexDirection: 'row', flexWrap: 'nowrap', alignItems: 'center', justifyContent: 'center', width: '100%', gap: '0px', overflowX: 'auto', paddingBottom: '0px' }}
+                className="no-scrollbar"
+            >
+                {[
+                    { id: "key", label: "01. Key Generation", icon: <Key size={28} /> },
+                    { id: "encrypt", label: "02. Encryption", icon: <Lock size={28} /> },
+                    { id: "cloud", label: "03. Cloud Simulation", icon: <Cloud size={28} /> },
+                    { id: "decrypt", label: "04. Decryption", icon: <Unlock size={28} /> }
+                ].map((tab, idx, arr) => (
+                    <React.Fragment key={tab.id}>
+                        <button
+                            onClick={() => !isDemoRunning && setActiveTab(tab.id)}
+                            style={{
+                                display: 'flex',
+                                flexDirection: 'row',
+                                flexWrap: 'nowrap',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '16px',
+                                flexShrink: 0,
+                                padding: '24px 32px',
+                                border: '1px solid rgba(255, 255, 255, 0.1)',
+                                borderBottom: activeTab === tab.id ? '4px solid white' : '1px solid rgba(255, 255, 255, 0.1)',
+                                background: activeTab === tab.id ? 'rgba(255, 255, 255, 0.05)' : 'transparent',
+                                opacity: activeTab === tab.id ? 1 : 0.4,
+                                transition: 'all 0.3s ease',
+                                cursor: isDemoRunning ? 'not-allowed' : 'pointer'
+                            }}
+                            className={`group ${activeTab === tab.id ? "text-white" : "text-white/70 hover:opacity-100"}`}
+                        >
+                            <div className={`transition-transform duration-500 ${activeTab === tab.id ? "scale-105" : "opacity-70"}`}>
+                                {tab.icon}
+                            </div>
+                            <span className="text-xl font-black tracking-tight whitespace-nowrap uppercase italic">
+                                {tab.label}
+                            </span>
+                        </button>
+                        {idx < arr.length - 1 && (
+                            <div className="flex items-center px-4 text-white/10">
+                                <ArrowRight size={24} strokeWidth={1} />
+                            </div>
+                        )}
+                    </React.Fragment>
+                ))}
+            </nav>
+
+            {/* MAIN CONTENT AREA */}
+            <main className="max-w-[1800px] mx-auto px-10 py-12">
+                <div className="bg-[#0f172a]/30 backdrop-blur-2xl rounded-[4px] p-12 border border-white/5 relative overflow-hidden">
+
+                    <div className="relative z-10 space-y-16">
+                        {activeTab === "key" &&
+                            <KeyGenPanel
+                                onComplete={(data) => {
+                                    setCryptoData(prev => ({ ...prev, keyId: data.keyId }));
+                                    localStorage.setItem("last_key_id", data.keyId);
+                                }}
+                                onNext={() => setActiveTab("encrypt")}
+                            />
+                        }
+
+                        {activeTab === "encrypt" &&
+                            <EncryptionPanel
+                                keyId={cryptoData.keyId}
+                                onComplete={(data) => {
+                                    setCryptoData(prev => ({ ...prev, messageId: data.messageId, ciphertext: data.ciphertext }));
+                                    localStorage.setItem("last_message_id", data.messageId);
+                                }}
+                                onNext={() => setActiveTab("cloud")}
+                            />
+                        }
+
+                        {activeTab === "cloud" &&
+                            <CloudPanel
+                                keyId={cryptoData.keyId}
+                                messageId={cryptoData.messageId}
+                                ciphertext={cryptoData.ciphertext}
+                                onNext={() => setActiveTab("decrypt")}
+                            />
+                        }
+
+                        {activeTab === "decrypt" &&
+                            <DecryptionPanel
+                                keyId={cryptoData.keyId}
+                                messageId={cryptoData.messageId}
+                            />
+                        }
+                    </div>
+
                 </div>
             </main>
+
         </div>
     );
 };

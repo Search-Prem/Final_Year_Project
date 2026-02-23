@@ -22,7 +22,7 @@ const extendedGCD = (a, b) => {
 
     while (r !== 0n) {
         let quotient = old_r / r;
-        
+
         let temp_r = r;
         r = old_r - quotient * r;
         old_r = temp_r;
@@ -55,17 +55,17 @@ const modPow = (base, exponent, modulus) => {
     base = bigInt(base);
     exponent = bigInt(exponent);
     modulus = bigInt(modulus);
-    
+
     if (modulus === 1n) return 0n;
-    
+
     let result = 1n;
     base = base % modulus;
-    
+
     while (exponent > 0n) {
         if (exponent % 2n === 1n) {
             result = (result * base) % modulus;
         }
-        exponent = exponent >> 1n; 
+        exponent = exponent >> 1n;
         base = (base * base) % modulus;
     }
     return result;
@@ -96,12 +96,12 @@ const isPrime = (n, k = 5) => {
         const numBits = n.toString(2).length;
         let a = 0n;
         while (a < 2n || a >= n - 1n) {
-             // Generate random bits
-             let bits = "";
-             for(let b=0; b<numBits; b++) {
-                 bits += Math.random() < 0.5 ? "0" : "1";
-             }
-             a = BigInt("0b" + bits);
+            // Generate random bits
+            let bits = "";
+            for (let b = 0; b < numBits; b++) {
+                bits += Math.random() < 0.5 ? "0" : "1";
+            }
+            a = BigInt("0b" + bits);
         }
 
         let x = modPow(a, d, n);
@@ -121,10 +121,28 @@ const isPrime = (n, k = 5) => {
     return true;
 };
 
+const isqrt = (n) => {
+    if (n < 0n) throw new Error("negative BigInt sqrt");
+    if (n < 2n) return n;
+    let x = n;
+    let y = (x + 1n) / 2n;
+    while (y < x) {
+        x = y;
+        y = (x + n / x) / 2n;
+    }
+    return x;
+};
+
+const ifourthRoot = (n) => {
+    return isqrt(isqrt(n));
+};
+
 module.exports = {
     gcd,
     extendedGCD,
     modInverse,
     modPow,
-    isPrime
+    isPrime,
+    isqrt,
+    ifourthRoot
 };

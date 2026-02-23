@@ -1,100 +1,132 @@
-const db = require('../models');
-const Key = db.Key;
-const Message = db.Message;
+const Key = require('../models/Key');
+const Message = require('../models/Message');
 const rsa = require('../crypto/rsa');
 const homomorphic = require('../crypto/homomorphic');
 const crt = require('../crypto/crt');
+const { ifourthRoot } = require('../crypto/utils');
 
-// Generate Keys
+/**
+ * STEP 1 – KEY GENERATION
+ */
 exports.generateKeyPair = async (req, res) => {
     try {
-        // userId from middleware (need auth middleware)
         const userId = req.userId;
         const { p, q, D } = req.body;
 
-        if (!p || !q || !D) return res.status(400).send({ message: "p, q, D are required" });
+        if (!p || !q || !D)
+            return res.status(400).send({ message: "p, q, D are required" });
 
-        // Generate keys using our crypto engine
-        // This might take time for large numbers, so async/await wrap if needed (but it's CPU bound)
-        const keys = rsa.generateKeys(p, q, D);
+        const startTime = Date.now();
+        const results = rsa.generateKeys(p, q, D);
+        const genTime = Date.now() - startTime;
 
-        // Store in DB
-        // Save BigInts as strings
+        const nBig = results.publicKey.n;
+        const dBig = results.privateKey.d;
+
+        const phi = (BigInt(p) - 1n) * (BigInt(q) - 1n);
+
+        // ✅ Recompute Wiener Bound Dynamically
+        const rootN4 = ifourthRoot(nBig);
+        const threshold = rootN4 / 3n;
+        const isWienerSecure = dBig > threshold;
+
+        // ✅ Store only essential values
         const keyRecord = await Key.create({
-            userId: userId,
-            p: keys.privateKey.p.toString(),
-            q: keys.privateKey.q.toString(),
-            D: keys.privateKey.D.toString(),
-            n: keys.publicKey.n.toString(),
-            e: keys.publicKey.e.toString(),
-            d_encrypted: keys.privateKey.d.toString(), // TODO: Encrypt this with user password if real app
-            pell_solution_index: keys.metadata.pellSolution.index
+            userId,
+            p: p.toString(),
+            q: q.toString(),
+            D: D.toString(),
+            n: nBig.toString(),
+            phi: phi.toString(),
+            d: dBig.toString(),
+            e: results.publicKey.e.toString(),
+            fundamentalSolutionX: results.metadata.pellSolution.x.toString(),
+            fundamentalSolutionY: results.metadata.pellSolution.y.toString(),
+            iterations: results.metadata.pellSolution.index,
+            iterationLog: results.metadata.pellSolution.iterationLog,
+            genTime
         });
 
         res.send({
-            message: "Keys generated successfully",
-            publicKey: {
-                n: keys.publicKey.n.toString(),
-                e: keys.publicKey.e.toString()
-            },
-            metadata: {
-                solutionIndex: keys.metadata.pellSolution.index.toString(),
-                pellStep: {
-                    x: keys.metadata.pellSolution.x.toString(),
-                    y: keys.metadata.pellSolution.y.toString(),
-                    index: keys.metadata.pellSolution.index.toString()
-                }
+            keyId: keyRecord._id,
+            results: {
+                n: nBig.toString(),
+                e: results.publicKey.e.toString(),
+                d: dBig.toString(),
+                phi: phi.toString(),
+                fundamentalSolution: {
+                    x: results.metadata.pellSolution.x.toString(),
+                    y: results.metadata.pellSolution.y.toString()
+                },
+                iterationLog: results.metadata.pellSolution.iterationLog,
+                wienerCheck: {
+                    threshold: threshold.toString(),
+                    d: dBig.toString(),
+                    isWienerSecure
+                },
+                genTime
             }
         });
 
     } catch (err) {
-        console.error("Key Generation Error:", err);
-        console.error("Request Body:", req.body);
-        res.status(500).send({ message: "Key Gen Failed: " + err.message });
+        res.status(500).send({ message: err.message });
     }
 };
 
+/**
+ * FETCH USER KEYS
+ */
 exports.getKeys = async (req, res) => {
     try {
-        const userId = req.userId;
-        const keys = await Key.findAll({ where: { userId } });
+        const keys = await Key.find({ userId: req.userId }).sort({ createdAt: -1 });
         res.send(keys);
     } catch (err) {
         res.status(500).send({ message: err.message });
     }
 };
 
-// Encrypt
+
+/**
+ * STEP 2 – ENCRYPTION
+ */
 exports.encryptMessage = async (req, res) => {
     try {
         const userId = req.userId;
-        const { message, keyId } = req.body;
+        const { plaintext, keyId } = req.body;
 
-        const key = await Key.findByPk(keyId);
-        if (!key) return res.status(404).send({ message: "Key not found" });
+        if (!plaintext || !keyId)
+            return res.status(400).send({ message: "plaintext and keyId required" });
+
+        const key = await Key.findById(keyId);
+        if (!key)
+            return res.status(404).send({ message: "Key not found" });
 
         const publicKey = {
             n: BigInt(key.n),
             e: BigInt(key.e)
         };
 
-        const encrypted = rsa.encrypt(message, publicKey);
-
-        // Store
-        // asciiValues is array of BigInt, convert to string for JSON if needed or Number if small (ASCII < 256)
-        // ciphertextValues is array of BigInt, must be serialized to string
+        const startTime = Date.now();
+        const encrypted = rsa.encrypt(plaintext, publicKey);
+        const encTime = Date.now() - startTime;
 
         const msgRecord = await Message.create({
-            userId: userId,
-            plaintext: message,
-            ascii_values: encrypted.asciiValues.map(x => x.toString()),
-            ciphertext_values: encrypted.ciphertextValues.map(x => x.toString()),
-            is_verified: false
+            userId,
+            plaintext,
+            asciiValues: encrypted.asciiValues.map(x => x.toString()),
+            ciphertextValues: encrypted.ciphertextValues.map(x => x.toString()),
+            expandedArithmetic: encrypted.expandedArithmetic
         });
 
         res.send({
-            message: "Message encrypted",
-            ciphertext: encrypted.ciphertextValues.map(x => x.toString())
+            messageId: msgRecord._id,
+            asciiTable: encrypted.asciiValues.map((val, idx) => ({
+                char: plaintext[idx],
+                code: val.toString()
+            })),
+            ciphertext: encrypted.ciphertextValues.map(x => x.toString()),
+            expandedArithmetic: encrypted.expandedArithmetic,
+            encTime
         });
 
     } catch (err) {
@@ -102,22 +134,33 @@ exports.encryptMessage = async (req, res) => {
     }
 };
 
-// Cloud Homomorphic Multiplication
-// Input: array of message IDs or ciphertexts
+
+/**
+ * STEP 3 – CLOUD HOMOMORPHIC MULTIPLICATION
+ */
 exports.cloudMultiply = async (req, res) => {
     try {
-        // This is a "Cloud" route -> It doesn't know the private key.
-        // It just receives ciphertexts and public modulus n.
-        // For simplicity API, client sends list of ciphertexts and the N to use.
+        const { messageId, keyId } = req.body;
 
-        const { ciphertexts, n } = req.body;
+        const msg = await Message.findById(messageId);
+        const key = await Key.findById(keyId);
 
-        if (!ciphertexts || !n) return res.status(400).send({ message: "Ciphertexts and n required" });
+        if (!msg || !key)
+            return res.status(404).send({ message: "Message or Key not found" });
 
-        const product = homomorphic.homomorphicMultiply(ciphertexts, n);
+        const startTime = Date.now();
+        const { product, breakdown } =
+            homomorphic.homomorphicMultiply(msg.ciphertextValues, BigInt(key.n));
+        const execTime = Date.now() - startTime;
+
+        msg.homomorphicResult = product.toString();
+        msg.cloudBreakdown = breakdown;
+        await msg.save();
 
         res.send({
-            result: product.toString()
+            product: product.toString(),
+            breakdown,
+            cloudExecTime: execTime
         });
 
     } catch (err) {
@@ -125,29 +168,52 @@ exports.cloudMultiply = async (req, res) => {
     }
 };
 
-// Decrypt
+
+/**
+ * STEP 4 – DECRYPTION
+ */
 exports.decryptMessage = async (req, res) => {
     try {
-        const userId = req.userId;
-        const { ciphertexts, keyId } = req.body;
+        const { messageId, keyId } = req.body;
 
-        const key = await Key.findByPk(keyId);
-        if (!key) return res.status(404).send({ message: "Key not found" });
+        const msg = await Message.findById(messageId);
+        const key = await Key.findById(keyId);
 
-        // Helper to reconstruct privateKey object
+        if (!msg || !key)
+            return res.status(404).send({ message: "Record not found" });
+
+        if (!msg.homomorphicResult)
+            return res.status(400).send({ message: "Cloud step not executed" });
+
         const privateKey = {
-            d: BigInt(key.d_encrypted),
+            d: BigInt(key.d),
             p: BigInt(key.p),
             q: BigInt(key.q)
         };
 
-        const cipherBigInts = ciphertexts.map(c => BigInt(c));
-        const result = crt.decryptCRT(cipherBigInts, privateKey);
+        const startTime = Date.now();
+
+        const decrypted = crt.decryptCRT(
+            [BigInt(msg.homomorphicResult)],
+            privateKey
+        );
+
+        const decTime = Date.now() - startTime;
+
+        let expected = 1n;
+        msg.asciiValues.forEach(v => {
+            expected = (expected * BigInt(v)) % BigInt(key.n);
+        });
+
+        const decryptedValue = BigInt(decrypted.decryptedCharCodes[0]);
+        const isVerified = decryptedValue === expected;
 
         res.send({
-            decryptedText: result.decryptedText,
-            decryptedCharCodes: result.decryptedCharCodes.map(x => x.toString()),
-            decryptionSteps: result.decryptionSteps
+            decryptedResult: decryptedValue.toString(),
+            expectedResult: expected.toString(),
+            isVerified,
+            decryptionSteps: decrypted.decryptionSteps,
+            decTime
         });
 
     } catch (err) {

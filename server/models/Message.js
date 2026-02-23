@@ -1,30 +1,35 @@
-module.exports = (sequelize, DataTypes) => {
-    const Message = sequelize.define("Message", {
-        plaintext: {
-            type: DataTypes.TEXT,
-            allowNull: false
-        },
-        ascii_values: {
-            type: DataTypes.JSON, // Array of numbers/strings
-            allowNull: false
-        },
-        ciphertext_values: {
-            type: DataTypes.JSON, // Array of BigInt strings
-            allowNull: false
-        },
-        homomorphic_result: {
-            type: DataTypes.TEXT, // Result of cloud multiplication (BigInt string)
-            allowNull: true
-        },
-        decrypted_result: {
-            type: DataTypes.TEXT,
-            allowNull: true
-        },
-        is_verified: {
-            type: DataTypes.BOOLEAN,
-            defaultValue: false
-        }
-    });
+const mongoose = require('mongoose');
 
-    return Message;
-};
+const messageSchema = new mongoose.Schema({
+    userId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
+    },
+    plaintext: {
+        type: String,
+        required: true
+    },
+    asciiValues: [Number],
+    ciphertextValues: [String], // Stored as strings because they are BigInts
+    expandedArithmetic: mongoose.Schema.Types.Mixed,
+    homomorphicResult: {
+        type: String // Stored as string (BigInt)
+    },
+    cloudBreakdown: String,
+    decryptedResult: {
+        type: String // Stored as string (BigInt)
+    },
+    decryptionSteps: [mongoose.Schema.Types.Mixed],
+    isVerified: {
+        type: Boolean,
+        default: false
+    },
+    createdAt: {
+        type: Date,
+        default: Date.now
+    }
+});
+
+const Message = mongoose.model('Message', messageSchema);
+module.exports = Message;

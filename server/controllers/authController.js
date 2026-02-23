@@ -1,7 +1,6 @@
-const db = require('../models');
-const User = db.User;
-const bcrypt = require('bcryptjs');
+const User = require('../models/User');
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
 
 exports.register = async (req, res) => {
     try {
@@ -11,17 +10,17 @@ exports.register = async (req, res) => {
         }
 
         // Check duplicate
-        const existing = await User.findOne({ where: { username } });
+        const existing = await User.findOne({ username });
         if (existing) {
             return res.status(400).send({ message: "Username already exists" });
         }
 
-        const password_hash = await bcrypt.hash(password, 8);
-
-        await User.create({
+        const user = new User({
             username,
-            password_hash
+            passwordHash: await bcrypt.hash(password, 8)
         });
+
+        await user.save();
 
         res.send({ message: "User registered successfully!" });
     } catch (err) {
@@ -32,13 +31,13 @@ exports.register = async (req, res) => {
 exports.login = async (req, res) => {
     try {
         const { username, password } = req.body;
-        const user = await User.findOne({ where: { username } });
+        const user = await User.findOne({ username });
 
         if (!user) {
             return res.status(404).send({ message: "User Not found." });
         }
 
-        const passwordIsValid = await bcrypt.compare(password, user.password_hash);
+        const passwordIsValid = await user.comparePassword(password);
 
         if (!passwordIsValid) {
             return res.status(401).send({
@@ -47,12 +46,12 @@ exports.login = async (req, res) => {
             });
         }
 
-        const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET || 'secret-key', {
+        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET || 'secret-key', {
             expiresIn: 86400 // 24 hours
         });
 
         res.status(200).send({
-            id: user.id,
+            id: user._id,
             username: user.username,
             role: user.role,
             accessToken: token
