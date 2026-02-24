@@ -180,6 +180,32 @@ const KeyGenPanel = ({ onComplete, onNext }) => {
                             </div>
                         </div>
 
+                        {/* SHARE WITH RECEIVER */}
+                        <div className="relative pb-16">
+                            <div className="absolute left-5 top-0 bottom-0 w-px bg-green-500/30 z-0"></div>
+                            <div className="flex items-start gap-8 relative z-10">
+                                <div className="w-10 h-10 rounded-full bg-green-500 text-black flex items-center justify-center text-xs font-black shrink-0 ring-8 ring-green-500/10">📤</div>
+                                <div className="space-y-4 flex-1 pt-1">
+                                    <h3 className="text-xl font-bold text-green-400 uppercase tracking-tighter">Share with Receiver</h3>
+                                    <p className="text-white/50 text-sm">The receiver needs the following values to decrypt. Copy and share securely.</p>
+                                    <div className="grid grid-cols-3 gap-3 font-mono">
+                                        <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-[4px]">
+                                            <div className="text-[10px] text-green-400/60 uppercase font-black mb-1">Private Key (d)</div>
+                                            <div className="text-sm font-black text-green-300 break-all">{result.d}</div>
+                                        </div>
+                                        <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-[4px]">
+                                            <div className="text-[10px] text-green-400/60 uppercase font-black mb-1">Prime p</div>
+                                            <div className="text-sm font-black text-green-300">{p}</div>
+                                        </div>
+                                        <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-[4px]">
+                                            <div className="text-[10px] text-green-400/60 uppercase font-black mb-1">Prime q</div>
+                                            <div className="text-sm font-black text-green-300">{q}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         {/* PANEL FOOTER */}
                         <div className="pt-8 flex justify-between items-center border-t border-white/5 opacity-60 italic">
                             <div className="text-xs font-black uppercase tracking-[0.2em]">Gen Time: {result.genTime}ms</div>

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import CryptoService from '../services/crypto.service';
 import { Cloud, CheckCircle2, AlertCircle, ArrowRight, ShieldCheck } from 'lucide-react';
 
-const CloudPanel = ({ keyId, messageId, onComplete, onNext }) => {
+const CloudPanel = ({ keyId, messageId, onComplete }) => {
 
     const [loading, setLoading] = useState(false);
     const [result, setResult] = useState(null);
@@ -32,7 +32,7 @@ const CloudPanel = ({ keyId, messageId, onComplete, onNext }) => {
     return (
         <div className="space-y-10">
             <h2 className="text-2xl font-black text-white tracking-tighter border-l-4 border-white pl-4 mb-6 uppercase italic">
-                Step 3 – Cloud Simulation
+                Step 3 – Upload to Cloud
             </h2>
 
             {(!keyId || !messageId) && (
@@ -48,15 +48,15 @@ const CloudPanel = ({ keyId, messageId, onComplete, onNext }) => {
                             <ShieldCheck size={20} /> Secure Cloud Compute
                         </div>
                         <p className="text-xl text-white/70 leading-relaxed font-light font-mono">
-                            Performing Multiplicative Homomorphic Encryption on the ciphertext without decryption.
-                            The server will multiply the stored ciphertext by itself, simulating a blind calculation.
+                            Uploading encrypted ciphertext to the cloud server for homomorphic computation.
+                            The cloud performs multiplicative operations on the encrypted data without decryption.
                         </p>
                         <button
                             onClick={handleCloudProcess}
                             disabled={loading || !keyId || !messageId}
                             className="btn-primary w-full h-16 mt-4"
                         >
-                            {loading ? 'Executing Cloud Math...' : 'Execute Blind Computation'}
+                            {loading ? 'Uploading to Cloud...' : 'Upload & Process on Cloud'}
                         </button>
                     </div>
                     <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
@@ -133,9 +133,7 @@ const CloudPanel = ({ keyId, messageId, onComplete, onNext }) => {
                         {/* PANEL FOOTER */}
                         <div className="pt-8 flex justify-between items-center border-t border-white/5 opacity-60 italic">
                             <div className="text-xs font-black uppercase tracking-[0.2em]">Execution Latency: {result.cloudExecTime}ms</div>
-                            <button onClick={onNext} className="flex items-center gap-2 hover:translate-x-2 transition-transform font-black uppercase text-xs tracking-widest text-white">
-                                Next Step <ArrowRight size={16} />
-                            </button>
+                            <div className="text-xs font-black uppercase tracking-[0.2em] text-green-400">✓ Data Uploaded Successfully</div>
                         </div>
                     </div>
                 </div>

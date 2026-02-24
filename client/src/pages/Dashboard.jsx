@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import AuthService from '../services/auth.service';
-import AutoDemoService from '../services/autodemo.service';
 import { useNavigate } from 'react-router-dom';
 import {
     Key,
@@ -9,8 +8,6 @@ import {
     Unlock,
     LogOut,
     ArrowRight,
-    Play,
-    Loader2
 } from 'lucide-react';
 
 import KeyGenPanel from '../components/KeyGenPanel';
@@ -20,15 +17,17 @@ import DecryptionPanel from '../components/DecryptionPanel';
 
 const Dashboard = () => {
 
-    const [activeTab, setActiveTab] = useState("key");
-    const [isDemoRunning, setIsDemoRunning] = useState(false);
+    const user = AuthService.getCurrentUser();
+    const isReceiver = user?.role === 'Receiver';
+    const isSender = !isReceiver; // Default to Sender for any non-Receiver role
+
+    const [activeTab, setActiveTab] = useState(isSender ? "key" : "decrypt");
     const [cryptoData, setCryptoData] = useState({
         keyId: localStorage.getItem('last_key_id') || null,
         messageId: localStorage.getItem('last_message_id') || null,
         ciphertext: null
     });
 
-    const user = AuthService.getCurrentUser();
     const navigate = useNavigate();
 
     const logout = () => {
@@ -36,28 +35,18 @@ const Dashboard = () => {
         navigate("/login");
     };
 
-    const runAutomatedDemo = async () => {
-        setIsDemoRunning(true);
-        try {
-            await AutoDemoService.runFullDemo(
-                (step) => setActiveTab(step),
-                (step, data, keyId, messageId) => {
-                    if (keyId) {
-                        setCryptoData(prev => ({ ...prev, keyId }));
-                        localStorage.setItem('last_key_id', keyId);
-                    }
-                    if (messageId) {
-                        setCryptoData(prev => ({ ...prev, messageId }));
-                        localStorage.setItem('last_message_id', messageId);
-                    }
-                }
-            );
-        } catch (err) {
-            console.error('Demo failed:', err);
-        } finally {
-            setIsDemoRunning(false);
-        }
-    };
+    // Define tabs based on role
+    const senderTabs = [
+        { id: "key", label: "01. Key Generation", icon: <Key size={28} /> },
+        { id: "encrypt", label: "02. Encryption", icon: <Lock size={28} /> },
+        { id: "cloud", label: "03. Upload to Cloud", icon: <Cloud size={28} /> },
+    ];
+
+    const receiverTabs = [
+        { id: "decrypt", label: "01. Decryption", icon: <Unlock size={28} /> },
+    ];
+
+    const tabs = isSender ? senderTabs : receiverTabs;
 
     return (
         <div className="min-h-screen text-white bg-[#020617]">
@@ -86,32 +75,15 @@ const Dashboard = () => {
                 </div>
             </div>
 
-            {/* DEMO BUTTON */}
-            <div className="flex justify-center mb-8">
-                <button
-                    onClick={runAutomatedDemo}
-                    disabled={isDemoRunning}
-                    className="btn-secondary flex items-center gap-3"
-                >
-                    {isDemoRunning ? <Loader2 size={20} className="animate-spin" /> : <Play size={20} />}
-                    {isDemoRunning ? 'Running Demo...' : 'Start Full Security Demo'}
-                </button>
-            </div>
-
             {/* NAVIGATION: Progress Tracker with Continuous Borders */}
             <nav
                 style={{ display: 'flex', flexDirection: 'row', flexWrap: 'nowrap', alignItems: 'center', justifyContent: 'center', width: '100%', gap: '0px', overflowX: 'auto', paddingBottom: '0px' }}
                 className="no-scrollbar"
             >
-                {[
-                    { id: "key", label: "01. Key Generation", icon: <Key size={28} /> },
-                    { id: "encrypt", label: "02. Encryption", icon: <Lock size={28} /> },
-                    { id: "cloud", label: "03. Cloud Simulation", icon: <Cloud size={28} /> },
-                    { id: "decrypt", label: "04. Decryption", icon: <Unlock size={28} /> }
-                ].map((tab, idx, arr) => (
+                {tabs.map((tab, idx, arr) => (
                     <React.Fragment key={tab.id}>
                         <button
-                            onClick={() => !isDemoRunning && setActiveTab(tab.id)}
+                            onClick={() => setActiveTab(tab.id)}
                             style={{
                                 display: 'flex',
                                 flexDirection: 'row',
@@ -126,7 +98,7 @@ const Dashboard = () => {
                                 background: activeTab === tab.id ? 'rgba(255, 255, 255, 0.05)' : 'transparent',
                                 opacity: activeTab === tab.id ? 1 : 0.4,
                                 transition: 'all 0.3s ease',
-                                cursor: isDemoRunning ? 'not-allowed' : 'pointer'
+                                cursor: 'pointer'
                             }}
                             className={`group ${activeTab === tab.id ? "text-white" : "text-white/70 hover:opacity-100"}`}
                         >
@@ -151,7 +123,7 @@ const Dashboard = () => {
                 <div className="bg-[#0f172a]/30 backdrop-blur-2xl rounded-[4px] p-12 border border-white/5 relative overflow-hidden">
 
                     <div className="relative z-10 space-y-16">
-                        {activeTab === "key" &&
+                        {activeTab === "key" && isSender &&
                             <KeyGenPanel
                                 onComplete={(data) => {
                                     setCryptoData(prev => ({ ...prev, keyId: data.keyId }));
@@ -161,7 +133,7 @@ const Dashboard = () => {
                             />
                         }
 
-                        {activeTab === "encrypt" &&
+                        {activeTab === "encrypt" && isSender &&
                             <EncryptionPanel
                                 keyId={cryptoData.keyId}
                                 onComplete={(data) => {
@@ -172,20 +144,16 @@ const Dashboard = () => {
                             />
                         }
 
-                        {activeTab === "cloud" &&
+                        {activeTab === "cloud" && isSender &&
                             <CloudPanel
                                 keyId={cryptoData.keyId}
                                 messageId={cryptoData.messageId}
                                 ciphertext={cryptoData.ciphertext}
-                                onNext={() => setActiveTab("decrypt")}
                             />
                         }
 
-                        {activeTab === "decrypt" &&
-                            <DecryptionPanel
-                                keyId={cryptoData.keyId}
-                                messageId={cryptoData.messageId}
-                            />
+                        {activeTab === "decrypt" && isReceiver &&
+                            <DecryptionPanel />
                         }
                     </div>
 

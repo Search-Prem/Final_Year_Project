@@ -12,8 +12,8 @@ const encrypt = (plaintext, keyId) => {
     return api.post('/crypto/encrypt', { plaintext, keyId });
 };
 
-const decrypt = (messageId, keyId) => {
-    return api.post('/crypto/decrypt', { messageId, keyId });
+const decrypt = (messageId, keyId, privateKey) => {
+    return api.post('/crypto/decrypt', { messageId, keyId, privateKey });
 };
 
 const cloudMultiply = (messageId, keyId) => {

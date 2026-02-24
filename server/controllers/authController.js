@@ -4,10 +4,14 @@ const bcrypt = require('bcryptjs');
 
 exports.register = async (req, res) => {
     try {
-        const { username, password } = req.body;
+        const { username, password, role } = req.body;
         if (!username || !password) {
             return res.status(400).send({ message: "Username and password are required" });
         }
+
+        // Validate role
+        const validRoles = ['Sender', 'Receiver'];
+        const userRole = validRoles.includes(role) ? role : 'Sender';
 
         // Check duplicate
         const existing = await User.findOne({ username });
@@ -17,7 +21,8 @@ exports.register = async (req, res) => {
 
         const user = new User({
             username,
-            passwordHash: await bcrypt.hash(password, 8)
+            passwordHash: await bcrypt.hash(password, 8),
+            role: userRole
         });
 
         await user.save();

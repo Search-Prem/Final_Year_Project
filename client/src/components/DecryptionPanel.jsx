@@ -1,16 +1,20 @@
 import React, { useState } from 'react';
 import CryptoService from '../services/crypto.service';
-import { Unlock, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Unlock, CheckCircle2, AlertCircle, KeyRound } from 'lucide-react';
 
-const DecryptionPanel = ({ keyId, messageId, ciphertext }) => {
+const DecryptionPanel = () => {
 
     const [loading, setLoading] = useState(false);
     const [result, setResult] = useState(null);
     const [error, setError] = useState('');
+    const [messageId, setMessageId] = useState('');
+    const [privateKeyD, setPrivateKeyD] = useState('');
+    const [privateKeyP, setPrivateKeyP] = useState('');
+    const [privateKeyQ, setPrivateKeyQ] = useState('');
 
     const handleDecrypt = async () => {
-        if (!keyId || !messageId) {
-            setError('Please generate keys and encrypt a message first');
+        if (!messageId || !privateKeyD || !privateKeyP || !privateKeyQ) {
+            setError('Please provide the Message ID and all private key components (d, p, q)');
             return;
         }
 
@@ -19,7 +23,11 @@ const DecryptionPanel = ({ keyId, messageId, ciphertext }) => {
         setResult(null);
 
         try {
-            const res = await CryptoService.decrypt(messageId, keyId);
+            const res = await CryptoService.decrypt(messageId, null, {
+                d: privateKeyD,
+                p: privateKeyP,
+                q: privateKeyQ
+            });
             setResult(res.data);
         } catch (err) {
             setError(err.response?.data?.message || 'Decryption failed');
@@ -31,19 +39,63 @@ const DecryptionPanel = ({ keyId, messageId, ciphertext }) => {
     return (
         <div className="space-y-10">
             <h2 className="text-2xl font-black text-white tracking-tighter border-l-4 border-white pl-4 mb-6 uppercase italic">
-                Step 4 – Secure Decryption
+                Step 1 – Secure Decryption
             </h2>
 
-            {!keyId && (
-                <div className="p-6 bg-red-500/10 border border-red-500/20 rounded-[4px] text-white font-black flex items-center gap-4">
-                    <AlertCircle /> Process Fault: Secure key storage unreachable.
-                </div>
-            )}
-
             <div className="max-w-2xl space-y-8">
+                {/* Message ID Input */}
+                <div className="flex flex-col gap-3">
+                    <label className="text-white/40 text-[10px] font-black uppercase tracking-[0.2em] italic">Encrypted Message ID</label>
+                    <input
+                        value={messageId}
+                        onChange={e => setMessageId(e.target.value)}
+                        placeholder="Enter the Message ID from the sender..."
+                        className="bg-transparent border border-white/10 rounded-[4px] px-6 py-4 text-lg w-full focus:ring-2 focus:ring-white/20 transition-all text-white font-mono"
+                    />
+                </div>
+
+                {/* Private Key Section */}
+                <div className="p-8 bg-white/5 border border-white/10 rounded-[4px] space-y-6">
+                    <div className="flex items-center gap-3 text-white/60 text-sm font-black uppercase tracking-[0.2em]">
+                        <KeyRound size={18} />
+                        Private Key Components
+                    </div>
+
+                    <div className="flex flex-col gap-3">
+                        <label className="text-white/40 text-[10px] font-black uppercase tracking-[0.2em] italic">Private Key (d)</label>
+                        <input
+                            value={privateKeyD}
+                            onChange={e => setPrivateKeyD(e.target.value)}
+                            placeholder="Enter private key d..."
+                            className="bg-transparent border border-white/10 rounded-[4px] px-6 py-4 text-lg w-full focus:ring-2 focus:ring-white/20 transition-all text-white font-mono"
+                        />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="flex flex-col gap-3">
+                            <label className="text-white/40 text-[10px] font-black uppercase tracking-[0.2em] italic">Prime p</label>
+                            <input
+                                value={privateKeyP}
+                                onChange={e => setPrivateKeyP(e.target.value)}
+                                placeholder="Enter prime p..."
+                                className="bg-transparent border border-white/10 rounded-[4px] px-6 py-4 text-lg w-full focus:ring-2 focus:ring-white/20 transition-all text-white font-mono"
+                            />
+                        </div>
+                        <div className="flex flex-col gap-3">
+                            <label className="text-white/40 text-[10px] font-black uppercase tracking-[0.2em] italic">Prime q</label>
+                            <input
+                                value={privateKeyQ}
+                                onChange={e => setPrivateKeyQ(e.target.value)}
+                                placeholder="Enter prime q..."
+                                className="bg-transparent border border-white/10 rounded-[4px] px-6 py-4 text-lg w-full focus:ring-2 focus:ring-white/20 transition-all text-white font-mono"
+                            />
+                        </div>
+                    </div>
+                </div>
+
                 <button
                     onClick={handleDecrypt}
-                    disabled={loading || !keyId || !messageId}
+                    disabled={loading || !messageId || !privateKeyD || !privateKeyP || !privateKeyQ}
                     className="btn-primary w-full h-16"
                 >
                     {loading ? 'Reconstructing Plaintext...' : 'Decrypt Final Product'}

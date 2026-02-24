@@ -153,6 +153,12 @@ exports.cloudMultiply = async (req, res) => {
             homomorphic.homomorphicMultiply(msg.ciphertextValues, BigInt(key.n));
         const execTime = Date.now() - startTime;
 
+        if (product === 0n) {
+            return res.status(400).send({
+                message: "Homomorphic product is 0. This means one of the ciphertext values is a multiple of n. Please re-encrypt with different input or different primes."
+            });
+        }
+
         msg.homomorphicResult = product.toString();
         msg.cloudBreakdown = breakdown;
         await msg.save();
@@ -174,22 +180,46 @@ exports.cloudMultiply = async (req, res) => {
  */
 exports.decryptMessage = async (req, res) => {
     try {
-        const { messageId, keyId } = req.body;
+        const { messageId, keyId, privateKey: directKey } = req.body;
 
         const msg = await Message.findById(messageId);
-        const key = await Key.findById(keyId);
-
-        if (!msg || !key)
-            return res.status(404).send({ message: "Record not found" });
+        if (!msg)
+            return res.status(404).send({ message: "Message not found" });
 
         if (!msg.homomorphicResult)
             return res.status(400).send({ message: "Cloud step not executed" });
 
-        const privateKey = {
-            d: BigInt(key.d),
-            p: BigInt(key.p),
-            q: BigInt(key.q)
-        };
+        let privateKey;
+        let n;
+
+        if (directKey && directKey.d && directKey.p && directKey.q) {
+            // Receiver flow: private key provided directly
+            privateKey = {
+                d: BigInt(directKey.d),
+                p: BigInt(directKey.p),
+                q: BigInt(directKey.q)
+            };
+            n = BigInt(directKey.p) * BigInt(directKey.q);
+        } else if (keyId) {
+            // Sender/testing flow: look up key by ID
+            const key = await Key.findById(keyId);
+            if (!key)
+                return res.status(404).send({ message: "Key not found" });
+            privateKey = {
+                d: BigInt(key.d),
+                p: BigInt(key.p),
+                q: BigInt(key.q)
+            };
+            n = BigInt(key.n);
+        } else {
+            return res.status(400).send({ message: "Either keyId or privateKey (d, p, q) required" });
+        }
+
+        if (msg.homomorphicResult === '0' || BigInt(msg.homomorphicResult) === 0n) {
+            return res.status(400).send({
+                message: "Cannot decrypt: the homomorphic product is 0. This usually means the original encryption produced a ciphertext that is a multiple of n. Please re-encrypt with different input or primes."
+            });
+        }
 
         const startTime = Date.now();
 
@@ -202,7 +232,7 @@ exports.decryptMessage = async (req, res) => {
 
         let expected = 1n;
         msg.asciiValues.forEach(v => {
-            expected = (expected * BigInt(v)) % BigInt(key.n);
+            expected = (expected * BigInt(v)) % n;
         });
 
         const decryptedValue = BigInt(decrypted.decryptedCharCodes[0]);

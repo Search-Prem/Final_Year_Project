@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import AuthService from '../services/auth.service';
-import { Lock, User, UserPlus, Eye, EyeOff, Loader2, ShieldPlus } from 'lucide-react';
+import { Lock, User, UserPlus, Eye, EyeOff, Loader2, ShieldPlus, Send, Download } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const Register = () => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
+    const [role, setRole] = useState('Sender');
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -17,7 +18,7 @@ const Register = () => {
         setLoading(true);
         setError('');
         try {
-            await AuthService.register(username, password);
+            await AuthService.register(username, password, role);
             navigate('/login');
         } catch (err) {
             setError(err.response?.data?.message || 'Identity creation failed');
@@ -69,6 +70,37 @@ const Register = () => {
                     </AnimatePresence>
 
                     <form onSubmit={handleRegister} className="space-y-6">
+                        {/* Role Selector */}
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold text-white uppercase tracking-widest px-1">
+                                Select Role
+                            </label>
+                            <div className="grid grid-cols-2 gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setRole('Sender')}
+                                    className={`flex items-center justify-center gap-2 py-4 rounded-2xl font-bold text-sm transition-all border ${role === 'Sender'
+                                            ? 'bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-600/20'
+                                            : 'bg-slate-950/50 border-slate-800 text-slate-400 hover:border-slate-600'
+                                        }`}
+                                >
+                                    <Send className="w-4 h-4" />
+                                    Sender
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setRole('Receiver')}
+                                    className={`flex items-center justify-center gap-2 py-4 rounded-2xl font-bold text-sm transition-all border ${role === 'Receiver'
+                                            ? 'bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-600/20'
+                                            : 'bg-slate-950/50 border-slate-800 text-slate-400 hover:border-slate-600'
+                                        }`}
+                                >
+                                    <Download className="w-4 h-4" />
+                                    Receiver
+                                </button>
+                            </div>
+                        </div>
+
                         {/* Username Field */}
                         <div className="space-y-2 group">
                             <label className="text-xs font-bold text-white uppercase tracking-widest px-1 group-focus-within:text-indigo-400 transition-colors">
