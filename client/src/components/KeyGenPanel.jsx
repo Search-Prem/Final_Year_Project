@@ -26,7 +26,17 @@ const KeyGenPanel = ({ onComplete, onNext }) => {
         try {
             const res = await CryptoService.generateKeys(Number(p), Number(q), Number(D));
             setResult(res.data.results);
-            if (onComplete) onComplete({ keyId: res.data.keyId });
+            if (onComplete) onComplete({
+                keyId: res.data.keyId,
+                p: p,
+                q: q,
+                n: res.data.results.n,
+                e: res.data.results.e,
+                d: res.data.results.d,
+                phi: res.data.results.phi,
+                genTime: res.data.results.genTime,
+                fundamentalSolution: res.data.results.fundamentalSolution
+            });
         } catch (err) {
             setError(err.response?.data?.message || 'Key generation failed');
         } finally {
@@ -65,7 +75,7 @@ const KeyGenPanel = ({ onComplete, onNext }) => {
                         />
                     </div>
                     <div className="flex flex-col gap-3">
-                        <label className="text-white/40 text-[10px] font-black uppercase tracking-[0.2em] italic">Enter D for Pell Eq.</label>
+                        <label className="text-white/40 text-[10px] font-black uppercase tracking-[0.2em] italic">Enter D for Pell Eq.(Non-Perfect Square)</label>
                         <input
                             type="number"
                             value={D}

@@ -13,8 +13,22 @@ const Register = () => {
     const [error, setError] = useState('');
     const navigate = useNavigate();
 
+    // Password validation rules
+    const passwordChecks = [
+        { label: 'At least 8 characters', test: (pw) => pw.length >= 8 },
+        { label: 'One uppercase letter', test: (pw) => /[A-Z]/.test(pw) },
+        { label: 'One lowercase letter', test: (pw) => /[a-z]/.test(pw) },
+        { label: 'One digit', test: (pw) => /[0-9]/.test(pw) },
+        { label: 'One special character', test: (pw) => /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(pw) },
+    ];
+    const allPasswordValid = password.length > 0 && passwordChecks.every(c => c.test(password));
+
     const handleRegister = async (e) => {
         e.preventDefault();
+        if (!allPasswordValid) {
+            setError('Please meet all password requirements');
+            return;
+        }
         setLoading(true);
         setError('');
         try {
@@ -80,8 +94,8 @@ const Register = () => {
                                     type="button"
                                     onClick={() => setRole('Sender')}
                                     className={`flex items-center justify-center gap-2 py-4 rounded-2xl font-bold text-sm transition-all border ${role === 'Sender'
-                                            ? 'bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-600/20'
-                                            : 'bg-slate-950/50 border-slate-800 text-slate-400 hover:border-slate-600'
+                                        ? 'bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-600/20'
+                                        : 'bg-slate-950/50 border-slate-800 text-slate-400 hover:border-slate-600'
                                         }`}
                                 >
                                     <Send className="w-4 h-4" />
@@ -91,8 +105,8 @@ const Register = () => {
                                     type="button"
                                     onClick={() => setRole('Receiver')}
                                     className={`flex items-center justify-center gap-2 py-4 rounded-2xl font-bold text-sm transition-all border ${role === 'Receiver'
-                                            ? 'bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-600/20'
-                                            : 'bg-slate-950/50 border-slate-800 text-slate-400 hover:border-slate-600'
+                                        ? 'bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-600/20'
+                                        : 'bg-slate-950/50 border-slate-800 text-slate-400 hover:border-slate-600'
                                         }`}
                                 >
                                     <Download className="w-4 h-4" />
@@ -142,11 +156,22 @@ const Register = () => {
                                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                                 </button>
                             </div>
+                            {/* Password Strength Checklist */}
+                            {password.length > 0 && (
+                                <div className="mt-3 space-y-1.5">
+                                    {passwordChecks.map((check, i) => (
+                                        <div key={i} className={`flex items-center gap-2 text-xs transition-colors ${check.test(password) ? 'text-green-400' : 'text-white/30'}`}>
+                                            <span>{check.test(password) ? '✓' : '✗'}</span>
+                                            <span>{check.label}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
 
                         <button
                             type="submit"
-                            disabled={loading}
+                            disabled={loading || !allPasswordValid}
                             className="w-full relative group overflow-hidden py-4 bg-indigo-600 rounded-2xl font-bold text-white shadow-2xl shadow-indigo-600/20 transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-3"
                         >
                             <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />

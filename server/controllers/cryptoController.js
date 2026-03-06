@@ -4,6 +4,7 @@ const rsa = require('../crypto/rsa');
 const homomorphic = require('../crypto/homomorphic');
 const crt = require('../crypto/crt');
 const { ifourthRoot } = require('../crypto/utils');
+const { performance } = require('perf_hooks');
 
 /**
  * STEP 1 – KEY GENERATION
@@ -16,9 +17,9 @@ exports.generateKeyPair = async (req, res) => {
         if (!p || !q || !D)
             return res.status(400).send({ message: "p, q, D are required" });
 
-        const startTime = Date.now();
+        const startTime = performance.now();
         const results = rsa.generateKeys(p, q, D);
-        const genTime = Date.now() - startTime;
+        const genTime = parseFloat((performance.now() - startTime).toFixed(2));
 
         const nBig = results.publicKey.n;
         const dBig = results.privateKey.d;
@@ -106,16 +107,13 @@ exports.encryptMessage = async (req, res) => {
             e: BigInt(key.e)
         };
 
-        const startTime = Date.now();
+        const startTime = performance.now();
         const encrypted = rsa.encrypt(plaintext, publicKey);
-        const encTime = Date.now() - startTime;
+        const encTime = parseFloat((performance.now() - startTime).toFixed(2));
 
         const msgRecord = await Message.create({
             userId,
-            plaintext,
-            asciiValues: encrypted.asciiValues.map(x => x.toString()),
-            ciphertextValues: encrypted.ciphertextValues.map(x => x.toString()),
-            expandedArithmetic: encrypted.expandedArithmetic
+            ciphertextValues: encrypted.ciphertextValues.map(x => x.toString())
         });
 
         res.send({
@@ -148,10 +146,10 @@ exports.cloudMultiply = async (req, res) => {
         if (!msg || !key)
             return res.status(404).send({ message: "Message or Key not found" });
 
-        const startTime = Date.now();
+        const startTime = performance.now();
         const { product, breakdown } =
             homomorphic.homomorphicMultiply(msg.ciphertextValues, BigInt(key.n));
-        const execTime = Date.now() - startTime;
+        const execTime = parseFloat((performance.now() - startTime).toFixed(2));
 
         if (product === 0n) {
             return res.status(400).send({
@@ -160,7 +158,6 @@ exports.cloudMultiply = async (req, res) => {
         }
 
         msg.homomorphicResult = product.toString();
-        msg.cloudBreakdown = breakdown;
         await msg.save();
 
         res.send({
@@ -221,28 +218,46 @@ exports.decryptMessage = async (req, res) => {
             });
         }
 
-        const startTime = Date.now();
+        const startTime = performance.now();
 
         const decrypted = crt.decryptCRT(
             [BigInt(msg.homomorphicResult)],
             privateKey
         );
 
-        const decTime = Date.now() - startTime;
+        const decryptedValue = BigInt(decrypted.decryptedCharCodes[0]);
 
+        // Decrypt individual ciphertexts back to original text
+        const individualDecrypted = crt.decryptCRT(
+            msg.ciphertextValues.map(c => BigInt(c)),
+            privateKey
+        );
+
+        const recoveredChars = individualDecrypted.decryptedCharCodes.map(code => ({
+            asciiCode: code.toString(),
+            char: String.fromCharCode(Number(code))
+        }));
+
+        const recoveredText = recoveredChars.map(c => c.char).join('');
+
+        // Compute expected product from decrypted individual values (no stored plaintext needed)
         let expected = 1n;
-        msg.asciiValues.forEach(v => {
+        individualDecrypted.decryptedCharCodes.forEach(v => {
             expected = (expected * BigInt(v)) % n;
         });
 
-        const decryptedValue = BigInt(decrypted.decryptedCharCodes[0]);
         const isVerified = decryptedValue === expected;
+
+        const decTime = parseFloat((performance.now() - startTime).toFixed(2));
 
         res.send({
             decryptedResult: decryptedValue.toString(),
             expectedResult: expected.toString(),
             isVerified,
             decryptionSteps: decrypted.decryptionSteps,
+            recoveredText,
+            recoveredChars,
+            individualDecryptionSteps: individualDecrypted.decryptionSteps,
             decTime
         });
 

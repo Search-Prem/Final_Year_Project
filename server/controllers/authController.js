@@ -9,6 +9,20 @@ exports.register = async (req, res) => {
             return res.status(400).send({ message: "Username and password are required" });
         }
 
+        // Password strength validation
+        const passwordErrors = [];
+        if (password.length < 8) passwordErrors.push("at least 8 characters");
+        if (!/[A-Z]/.test(password)) passwordErrors.push("one uppercase letter");
+        if (!/[a-z]/.test(password)) passwordErrors.push("one lowercase letter");
+        if (!/[0-9]/.test(password)) passwordErrors.push("one digit");
+        if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) passwordErrors.push("one special character");
+
+        if (passwordErrors.length > 0) {
+            return res.status(400).send({
+                message: `Password must contain: ${passwordErrors.join(", ")}`
+            });
+        }
+
         // Validate role
         const validRoles = ['Sender', 'Receiver'];
         const userRole = validRoles.includes(role) ? role : 'Sender';

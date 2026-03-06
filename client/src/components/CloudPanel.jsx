@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import CryptoService from '../services/crypto.service';
-import { Cloud, CheckCircle2, AlertCircle, ArrowRight, ShieldCheck } from 'lucide-react';
+import { Cloud, CheckCircle2, AlertCircle, ArrowRight, ShieldCheck, Download, FileText } from 'lucide-react';
 
-const CloudPanel = ({ keyId, messageId, onComplete }) => {
+const CloudPanel = ({ keyId, messageId, ciphertext, keyGenResult, encryptResult, onComplete, onBack }) => {
 
     const [loading, setLoading] = useState(false);
     const [result, setResult] = useState(null);
@@ -21,13 +21,41 @@ const CloudPanel = ({ keyId, messageId, onComplete }) => {
         try {
             const res = await CryptoService.cloudMultiply(messageId, keyId);
             setResult(res.data);
-            if (onComplete) onComplete({ ciphertext: res.data.product });
+            if (onComplete) onComplete({ ciphertext: res.data.product, cloudExecTime: res.data.cloudExecTime });
         } catch (err) {
             setError(err.response?.data?.message || 'Cloud processing failed');
         } finally {
             setLoading(false);
         }
     };
+
+    const buildExportData = () => {
+        const lines = [];
+        lines.push('PELL-RSA CLOUD SECURITY — RECEIVER DATA');
+        lines.push(`Generated: ${new Date().toLocaleString()}`);
+        lines.push('');
+        lines.push(`Message ID: ${messageId}`);
+        if (keyGenResult) {
+            lines.push(`Private Key (d): ${keyGenResult.d}`);
+            lines.push(`Prime p: ${keyGenResult.p}`);
+            lines.push(`Prime q: ${keyGenResult.q}`);
+        }
+        return lines.join('\n');
+    };
+
+    const handleSaveTxt = () => {
+        const content = buildExportData();
+        const blob = new Blob([content], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'pell-rsa-data.txt';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    };
+
 
     return (
         <div className="space-y-10">
@@ -130,9 +158,38 @@ const CloudPanel = ({ keyId, messageId, onComplete }) => {
                             </div>
                         </div>
 
+                        {/* 04. Export / Save Section */}
+                        <div className="relative pb-16">
+                            <div className="absolute left-5 top-0 bottom-0 w-px bg-green-500/30 z-0"></div>
+                            <div className="flex items-start gap-8 relative z-10">
+                                <div className="w-10 h-10 rounded-full bg-green-500 text-black flex items-center justify-center text-xs font-black shrink-0 ring-8 ring-green-500/10">
+                                    <Download size={18} />
+                                </div>
+                                <div className="space-y-4 flex-1 pt-1">
+                                    <h3 className="text-xl font-bold text-green-400 uppercase tracking-tighter">Export Data for Receiver</h3>
+                                    <p className="text-white/50 text-sm">
+                                        Save the encrypted data, keys, and Message ID as a file. Share this file with the receiver for decryption.
+                                    </p>
+                                    <button
+                                        onClick={handleSaveTxt}
+                                        className="flex items-center justify-center gap-3 p-4 bg-green-500/10 border border-green-500/20 rounded-[4px] text-green-400 font-black uppercase text-sm tracking-widest hover:bg-green-500/20 hover:border-green-500/40 transition-all active:scale-[0.98] w-full"
+                                    >
+                                        <FileText size={20} /> Save as .TXT
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
                         {/* PANEL FOOTER */}
                         <div className="pt-8 flex justify-between items-center border-t border-white/5 opacity-60 italic">
-                            <div className="text-xs font-black uppercase tracking-[0.2em]">Execution Latency: {result.cloudExecTime}ms</div>
+                            <div className="flex items-center gap-6">
+                                {onBack && (
+                                    <button onClick={onBack} className="flex items-center gap-2 hover:-translate-x-2 transition-transform font-black uppercase text-xs tracking-widest text-white">
+                                        <ArrowRight size={16} className="rotate-180" /> Previous Step
+                                    </button>
+                                )}
+                                <div className="text-xs font-black uppercase tracking-[0.2em]">Execution Latency: {result.cloudExecTime}ms</div>
+                            </div>
                             <div className="text-xs font-black uppercase tracking-[0.2em] text-green-400">✓ Data Uploaded Successfully</div>
                         </div>
                     </div>

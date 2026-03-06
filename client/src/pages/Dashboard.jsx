@@ -8,12 +8,14 @@ import {
     Unlock,
     LogOut,
     ArrowRight,
+    BarChart2,
 } from 'lucide-react';
 
 import KeyGenPanel from '../components/KeyGenPanel';
 import EncryptionPanel from '../components/EncryptionPanel';
 import CloudPanel from '../components/CloudPanel';
 import DecryptionPanel from '../components/DecryptionPanel';
+import ReportsPanel, { saveReport } from '../components/ReportsPanel';
 
 const Dashboard = () => {
 
@@ -28,6 +30,11 @@ const Dashboard = () => {
         ciphertext: null
     });
 
+    // Store full results for export
+    const [keyGenResult, setKeyGenResult] = useState(null);
+    const [encryptResult, setEncryptResult] = useState(null);
+    const [senderTimings, setSenderTimings] = useState({});
+
     const navigate = useNavigate();
 
     const logout = () => {
@@ -40,10 +47,12 @@ const Dashboard = () => {
         { id: "key", label: "01. Key Generation", icon: <Key size={28} /> },
         { id: "encrypt", label: "02. Encryption", icon: <Lock size={28} /> },
         { id: "cloud", label: "03. Upload to Cloud", icon: <Cloud size={28} /> },
+        { id: "reports", label: "Reports", icon: <BarChart2 size={28} /> },
     ];
 
     const receiverTabs = [
         { id: "decrypt", label: "01. Decryption", icon: <Unlock size={28} /> },
+        { id: "reports", label: "Reports", icon: <BarChart2 size={28} /> },
     ];
 
     const tabs = isSender ? senderTabs : receiverTabs;
@@ -128,6 +137,9 @@ const Dashboard = () => {
                                 onComplete={(data) => {
                                     setCryptoData(prev => ({ ...prev, keyId: data.keyId }));
                                     localStorage.setItem("last_key_id", data.keyId);
+                                    // Store full keygen result for export
+                                    setKeyGenResult(data);
+                                    setSenderTimings(prev => ({ ...prev, genTime: data.genTime }));
                                 }}
                                 onNext={() => setActiveTab("encrypt")}
                             />
@@ -139,8 +151,12 @@ const Dashboard = () => {
                                 onComplete={(data) => {
                                     setCryptoData(prev => ({ ...prev, messageId: data.messageId, ciphertext: data.ciphertext }));
                                     localStorage.setItem("last_message_id", data.messageId);
+                                    // Store full encrypt result for export
+                                    setEncryptResult(data);
+                                    setSenderTimings(prev => ({ ...prev, encTime: data.encTime }));
                                 }}
                                 onNext={() => setActiveTab("cloud")}
+                                onBack={() => setActiveTab("key")}
                             />
                         }
 
@@ -149,11 +165,27 @@ const Dashboard = () => {
                                 keyId={cryptoData.keyId}
                                 messageId={cryptoData.messageId}
                                 ciphertext={cryptoData.ciphertext}
+                                keyGenResult={keyGenResult}
+                                encryptResult={encryptResult}
+                                onComplete={(data) => {
+                                    const finalTimings = { ...senderTimings, cloudExecTime: data.cloudExecTime };
+                                    // Save the complete report
+                                    saveReport('Sender', finalTimings, user?.id);
+                                }}
+                                onBack={() => setActiveTab("encrypt")}
                             />
                         }
 
                         {activeTab === "decrypt" && isReceiver &&
-                            <DecryptionPanel />
+                            <DecryptionPanel
+                                onDecryptComplete={(data) => {
+                                    saveReport('Receiver', { decTime: data.decTime }, user?.id);
+                                }}
+                            />
+                        }
+
+                        {activeTab === "reports" &&
+                            <ReportsPanel role={user?.role} userId={user?.id} />
                         }
                     </div>
 
