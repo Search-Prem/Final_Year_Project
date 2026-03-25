@@ -179,7 +179,16 @@ const Dashboard = () => {
                         {activeTab === "decrypt" && isReceiver &&
                             <DecryptionPanel
                                 onDecryptComplete={(data) => {
-                                    saveReport('Receiver', { decTime: data.decTime }, user?.id);
+                                    console.log('Dashboard onDecryptComplete:', {
+                                        data,
+                                        userId: user?.id,
+                                        userRole: user?.role
+                                    });
+                                    saveReport('Receiver', { 
+                                        decPhase1Time: data.decPhase1Time, 
+                                        decPhase2Time: data.decPhase2Time,
+                                        decTime: data.decTime 
+                                    }, user?.id);
                                 }}
                             />
                         }

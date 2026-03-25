@@ -114,7 +114,7 @@ const CloudPanel = ({ keyId, messageId, ciphertext, keyGenResult, encryptResult,
                                 <div className="space-y-6 flex-1 pt-1">
                                     <h3 className="text-xl font-bold text-white uppercase tracking-tighter">Computation Breakdown</h3>
                                     <div className="p-6 bg-white/5 rounded-[4px] border border-white/5 group-hover:border-white/10 transition-colors font-mono">
-                                        <div className="text-[10px] text-white/30 uppercase font-black mb-2 italic">Multiplicative Chain</div>
+                                        <div className="text-base text-white/30 uppercase font-black mb-2 italic">Multiplicative Chain</div>
                                         <div className="text-sm text-white break-all leading-relaxed">{result.breakdown}</div>
                                     </div>
                                 </div>
@@ -135,7 +135,7 @@ const CloudPanel = ({ keyId, messageId, ciphertext, keyGenResult, encryptResult,
                                             <span>M₁<sup>e</sup> × M₂<sup>e</sup></span>
                                             <span>mod n</span>
                                         </div>
-                                        <div className="mt-4 text-[10px] text-white/30 uppercase tracking-widest font-black">Homomorphism Audit Checked</div>
+                                        <div className="mt-4 text-base text-white/30 uppercase tracking-widest font-black">Homomorphism Audit Checked</div>
                                     </div>
                                 </div>
                             </div>
@@ -150,7 +150,7 @@ const CloudPanel = ({ keyId, messageId, ciphertext, keyGenResult, encryptResult,
                                     <h3 className="text-xl font-bold text-white uppercase tracking-tighter">Homomorphic Product</h3>
                                     <div className="p-6 bg-white/5 rounded-[4px] border border-white/5 group-hover:border-white/10 transition-colors font-mono space-y-4">
                                         <div>
-                                            <div className="text-[10px] text-white/30 uppercase font-black mb-1">C_Result = ∏(Cᵢ) mod n</div>
+                                            <div className="text-base text-white/30 uppercase font-black mb-1">C_Result = ∏(Cᵢ) mod n</div>
                                             <div className="text-sm text-white break-all leading-tight underline decoration-white/10 underline-offset-4">{result.product}</div>
                                         </div>
                                     </div>

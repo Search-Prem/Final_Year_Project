@@ -63,9 +63,21 @@ const DecryptionPanel = ({ onDecryptComplete }) => {
                 p: privateKeyP,
                 q: privateKeyQ
             });
+            
+            console.log('Decrypt Response:', res.data);
+            
             setResult(res.data);
-            if (onDecryptComplete) onDecryptComplete({ decTime: res.data.decTime });
+            if (onDecryptComplete) {
+                const reportData = { 
+                    decPhase1Time: res.data.decPhase1Time,
+                    decPhase2Time: res.data.decPhase2Time,
+                    decTime: res.data.decTime 
+                };
+                console.log('Passing to onDecryptComplete:', reportData);
+                onDecryptComplete(reportData);
+            }
         } catch (err) {
+            console.error('Decrypt error:', err);
             setError(err.response?.data?.message || 'Decryption failed');
         } finally {
             setLoading(false);
@@ -235,11 +247,11 @@ const DecryptionPanel = ({ onDecryptComplete }) => {
                                     <h3 className="text-xl font-bold text-white uppercase tracking-tighter">Proof of Homomorphic Consistency</h3>
                                     <div className="grid grid-cols-2 gap-4 font-mono">
                                         <div className="p-6 bg-white/5 border border-white/5 rounded-[4px]">
-                                            <div className="text-[10px] text-white/30 uppercase font-black mb-2">Decrypted Product</div>
+                                            <div className="text-base text-white/30 uppercase font-black mb-2">Decrypted Product</div>
                                             <div className="text-xl font-black text-white">{result.decryptedResult}</div>
                                         </div>
                                         <div className="p-6 bg-white/5 border border-white/5 rounded-[4px]">
-                                            <div className="text-[10px] text-white/30 uppercase font-black mb-2">Expected M × M</div>
+                                            <div className="text-base text-white/30 uppercase font-black mb-2">Expected M × M</div>
                                             <div className="text-xl font-black text-white">{result.expectedResult}</div>
                                         </div>
                                     </div>
@@ -283,8 +295,12 @@ const DecryptionPanel = ({ onDecryptComplete }) => {
                         )}
 
                         {/* PANEL FOOTER */}
-                        <div className="pt-8 flex justify-between items-center border-t border-white/5 opacity-60 italic">
-                            <div className="text-xs font-black uppercase tracking-[0.2em]">Decryption Latency: {result.decTime}ms</div>
+                        <div className="pt-8 flex justify-between items-center border-t border-white/5 opacity-60 italic text-xs gap-6">
+                            <div className="font-black uppercase tracking-[0.2em]">Proof of Homomorphic Consistency: {result.decPhase1Time}ms</div>
+                            <div className="w-px h-4 bg-white/10"></div>
+                            <div className="font-black uppercase tracking-[0.2em]">Recover Original Text: {result.decPhase2Time}ms</div>
+                            <div className="w-px h-4 bg-white/10"></div>
+                            <div className="font-black uppercase tracking-[0.2em]">Total Decryption: {result.decTime}ms</div>
                         </div>
                     </div>
                 </div>

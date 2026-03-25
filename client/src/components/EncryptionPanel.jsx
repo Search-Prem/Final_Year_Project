@@ -168,7 +168,7 @@ const EncryptionPanel = ({ keyId, onComplete, onNext, onBack }) => {
                                         {result.asciiTable && result.asciiTable.map((row, i) => (
                                             <div key={i} className="p-4 bg-white/5 border border-white/5 rounded-[4px] text-center">
                                                 <div className="text-lg font-black text-white">'{row.char}'</div>
-                                                <div className="text-[10px] text-white/30 mt-1">→ {row.code}</div>
+                                                <div className="text-sm text-white/30 mt-1">→ {row.code}</div>
                                             </div>
                                         ))}
                                     </div>
@@ -220,7 +220,7 @@ const EncryptionPanel = ({ keyId, onComplete, onNext, onBack }) => {
                                     <h3 className="text-xl font-bold text-green-400 uppercase tracking-tighter">Share with Receiver</h3>
                                     <p className="text-white/50 text-sm">The receiver needs this Message ID to retrieve and decrypt the data.</p>
                                     <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-[4px] font-mono">
-                                        <div className="text-[10px] text-green-400/60 uppercase font-black mb-1">Message ID</div>
+                                        <div className="text-sm text-green-400/60 uppercase font-black mb-1">Message ID</div>
                                         <div className="text-sm font-black text-green-300 break-all select-all">{result.messageId}</div>
                                     </div>
                                 </div>

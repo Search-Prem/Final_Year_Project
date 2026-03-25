@@ -218,7 +218,8 @@ exports.decryptMessage = async (req, res) => {
             });
         }
 
-        const startTime = performance.now();
+        // PHASE 1: Proof of Homomorphic Consistency
+        const startTimePhase1 = performance.now();
 
         const decrypted = crt.decryptCRT(
             [BigInt(msg.homomorphicResult)],
@@ -226,6 +227,10 @@ exports.decryptMessage = async (req, res) => {
         );
 
         const decryptedValue = BigInt(decrypted.decryptedCharCodes[0]);
+        const decPhase1Time = parseFloat((performance.now() - startTimePhase1).toFixed(2));
+
+        // PHASE 2: Recover Original Text
+        const startTimePhase2 = performance.now();
 
         // Decrypt individual ciphertexts back to original text
         const individualDecrypted = crt.decryptCRT(
@@ -239,6 +244,7 @@ exports.decryptMessage = async (req, res) => {
         }));
 
         const recoveredText = recoveredChars.map(c => c.char).join('');
+        const decPhase2Time = parseFloat((performance.now() - startTimePhase2).toFixed(2));
 
         // Compute expected product from decrypted individual values (no stored plaintext needed)
         let expected = 1n;
@@ -248,7 +254,7 @@ exports.decryptMessage = async (req, res) => {
 
         const isVerified = decryptedValue === expected;
 
-        const decTime = parseFloat((performance.now() - startTime).toFixed(2));
+        const decTime = decPhase1Time + decPhase2Time;
 
         res.send({
             decryptedResult: decryptedValue.toString(),
@@ -258,6 +264,8 @@ exports.decryptMessage = async (req, res) => {
             recoveredText,
             recoveredChars,
             individualDecryptionSteps: individualDecrypted.decryptionSteps,
+            decPhase1Time,
+            decPhase2Time,
             decTime
         });
 

@@ -20,6 +20,7 @@ app.use(express.json());
 // Routes
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/crypto', require('./routes/cryptoRoutes'));
+app.use('/api/reports', require('./routes/reportRoutes'));
 
 // Basic route
 app.get('/', (req, res) => {

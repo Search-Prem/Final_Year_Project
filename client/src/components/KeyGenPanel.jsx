@@ -119,15 +119,15 @@ const KeyGenPanel = ({ onComplete, onNext }) => {
                                     <h3 className="text-xl font-bold text-white uppercase tracking-tighter">Prime Factorization & Modulus</h3>
                                     <div className="grid grid-cols-3 gap-4 font-mono">
                                         <div className="p-6 bg-white/5 border border-white/5 rounded-[4px]">
-                                            <div className="text-[10px] text-white/30 uppercase font-black mb-2">Prime p</div>
+                                            <div className="text-base text-white/30 uppercase font-black mb-2">Prime p</div>
                                             <div className="text-2xl font-black text-white">{p}</div>
                                         </div>
                                         <div className="p-6 bg-white/5 border border-white/5 rounded-[4px]">
-                                            <div className="text-[10px] text-white/30 uppercase font-black mb-2">Prime q</div>
+                                            <div className="text-base text-white/30 uppercase font-black mb-2">Prime q</div>
                                             <div className="text-2xl font-black text-white">{q}</div>
                                         </div>
                                         <div className="p-6 bg-white/5 border border-white/5 rounded-[4px]">
-                                            <div className="text-[10px] text-white/30 uppercase font-black mb-2">n = p × q</div>
+                                            <div className="text-base text-white/30 uppercase font-black mb-2">n = p × q</div>
                                             <div className="text-2xl font-black text-white">{result.n}</div>
                                         </div>
                                     </div>
@@ -163,11 +163,11 @@ const KeyGenPanel = ({ onComplete, onNext }) => {
                                     <h3 className="text-xl font-bold text-white uppercase tracking-tighter">Euler's Totient & Key Derivation</h3>
                                     <div className="grid grid-cols-2 gap-4 font-mono">
                                         <div className="p-6 bg-white/5 border border-white/5 rounded-[4px]">
-                                            <div className="text-[10px] text-white/30 uppercase font-black mb-2">φ(n) = (p-1)(q-1)</div>
+                                            <div className="text-base text-white/30 uppercase font-black mb-2">φ(n) = (p-1)(q-1)</div>
                                             <div className="text-2xl font-black text-white">{result.phi}</div>
                                         </div>
                                         <div className="p-6 bg-white/5 border border-white/5 rounded-[4px]">
-                                            <div className="text-[10px] text-white/30 uppercase font-black mb-2">Public Exponent e</div>
+                                            <div className="text-base text-white/30 uppercase font-black mb-2">Public Exponent e</div>
                                             <div className="text-2xl font-black text-white">{result.e}</div>
                                         </div>
                                     </div>
@@ -183,7 +183,7 @@ const KeyGenPanel = ({ onComplete, onNext }) => {
                                 <div className="space-y-6 flex-1 pt-1">
                                     <h3 className="text-xl font-bold text-white uppercase tracking-tighter">Private Key (Secret)</h3>
                                     <div className="p-6 bg-white/5 rounded-[4px] border border-white/5 font-mono">
-                                        <div className="text-[10px] text-white/30 uppercase font-black mb-2">d = e⁻¹ mod φ(n)</div>
+                                        <div className="text-base text-white/30 uppercase font-black mb-2">d = e⁻¹ mod φ(n)</div>
                                         <div className="text-sm text-white break-all leading-relaxed">{result.d}</div>
                                     </div>
                                 </div>
@@ -200,15 +200,15 @@ const KeyGenPanel = ({ onComplete, onNext }) => {
                                     <p className="text-white/50 text-sm">The receiver needs the following values to decrypt. Copy and share securely.</p>
                                     <div className="grid grid-cols-3 gap-3 font-mono">
                                         <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-[4px]">
-                                            <div className="text-[10px] text-green-400/60 uppercase font-black mb-1">Private Key (d)</div>
+                                            <div className="text-sm text-green-400/60 uppercase font-black mb-1">Private Key (d)</div>
                                             <div className="text-sm font-black text-green-300 break-all">{result.d}</div>
                                         </div>
                                         <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-[4px]">
-                                            <div className="text-[10px] text-green-400/60 uppercase font-black mb-1">Prime p</div>
+                                            <div className="text-sm text-green-400/60 uppercase font-black mb-1">Prime p</div>
                                             <div className="text-sm font-black text-green-300">{p}</div>
                                         </div>
                                         <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-[4px]">
-                                            <div className="text-[10px] text-green-400/60 uppercase font-black mb-1">Prime q</div>
+                                            <div className="text-sm text-green-400/60 uppercase font-black mb-1">Prime q</div>
                                             <div className="text-sm font-black text-green-300">{q}</div>
                                         </div>
                                     </div>
