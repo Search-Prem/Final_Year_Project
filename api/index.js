@@ -1,69 +1,30 @@
-const express = require('express');
-const cors = require('cors');
+/**
+ * Vercel Serverless Function
+ * 
+ * We import the pre-configured Express app from server/index.js
+ * and connectDB from server/config/db.js so that ALL files
+ * (models, controllers, routes) use the SAME mongoose instance.
+ */
+
+const connectDB = require('../server/config/db');
+const app = require('../server/index');
 const mongoose = require('mongoose');
 
-const app = express();
+// Debug/health-check route
+app.get('/api/health', async (req, res) => {
+    const stateMap = { 0: 'disconnected', 1: 'connected', 2: 'connecting', 3: 'disconnecting' };
+    const state = mongoose.connection.readyState;
 
-// Fix BigInt serialization globally
-if (!BigInt.prototype.toJSON) {
-    BigInt.prototype.toJSON = function () { return this.toString(); }
-}
-
-// CORS - allow all origins for Vercel deployment
-app.use(cors({
-    origin: true,
-    credentials: true
-}));
-app.use(express.json());
-
-// Routes - import directly from server directory
-app.use('/api/auth', require('../server/routes/authRoutes'));
-app.use('/api/crypto', require('../server/routes/cryptoRoutes'));
-app.use('/api/reports', require('../server/routes/reportRoutes'));
-
-// Health check
-app.get('/api', (req, res) => {
     res.json({
-        status: 'Pell-RSA Cloud Security API Running on Vercel',
-        dbState: mongoose.connection.readyState
+        status: 'API is running',
+        database: stateMap[state] || 'unknown',
+        dbStateCode: state,
+        mongoUri: process.env.MONGO_URI ? 'SET (ends with: ...' + process.env.MONGO_URI.slice(-20) + ')' : 'NOT SET',
+        jwtSecret: process.env.JWT_SECRET ? 'SET' : 'NOT SET',
+        nodeVersion: process.version,
+        timestamp: new Date().toISOString()
     });
 });
-
-// MongoDB connection — cached for serverless
-let cached = global.mongooseConnection;
-if (!cached) {
-    cached = global.mongooseConnection = { conn: null, promise: null };
-}
-
-const connectDB = async () => {
-    if (cached.conn && mongoose.connection.readyState === 1) {
-        return cached.conn;
-    }
-
-    if (!cached.promise) {
-        const MONGO_URI = process.env.MONGO_URI;
-        if (!MONGO_URI) {
-            throw new Error('MONGO_URI environment variable is not set!');
-        }
-        console.log('[Vercel] Connecting to MongoDB...');
-        cached.promise = mongoose.connect(MONGO_URI, {
-            serverSelectionTimeoutMS: 20000,
-            connectTimeoutMS: 20000,
-            socketTimeoutMS: 45000,
-        }).then((m) => {
-            console.log('[Vercel] MongoDB connected successfully');
-            return m;
-        });
-    }
-
-    try {
-        cached.conn = await cached.promise;
-    } catch (err) {
-        cached.promise = null;
-        throw err;
-    }
-    return cached.conn;
-};
 
 // Vercel serverless handler
 const handler = async (req, res) => {
@@ -73,7 +34,8 @@ const handler = async (req, res) => {
         console.error('[Vercel] DB connection error:', err.message);
         return res.status(500).json({
             message: 'Database connection failed',
-            error: err.message
+            error: err.message,
+            hint: 'Check: 1) MONGO_URI env var in Vercel, 2) Atlas IP whitelist has 0.0.0.0/0'
         });
     }
     return app(req, res);
