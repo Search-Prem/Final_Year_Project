@@ -38,10 +38,7 @@ desktop.ini
 server/database.sqlite
 server/*.sqlite
 
-# Package lock (optional — remove if you want to track it)
-package-lock.json
-server/package-lock.json
-client/package-lock.json
+# Package lock — NOT ignored, Vercel needs these for installs
 
 # Generated documentation files
 code-explanation.txt

@@ -27,11 +27,16 @@ app.get('/', (req, res) => {
     res.send('Pell-RSA Cloud Security API Running');
 });
 
-// Connect to MongoDB and Start Server
-connectDB().then(() => {
-    app.listen(PORT, () => {
-        console.log(`Server running on port ${PORT}`);
+// Export app for Vercel serverless function
+module.exports = app;
+
+// Connect to MongoDB and Start Server (local development only)
+if (!process.env.VERCEL) {
+    connectDB().then(() => {
+        app.listen(PORT, () => {
+            console.log(`Server running on port ${PORT}`);
+        });
+    }).catch(err => {
+        console.error("Failed to connect to MongoDB:", err);
     });
-}).catch(err => {
-    console.error("Failed to connect to MongoDB:", err);
-});
+}

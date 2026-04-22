@@ -1,0 +1,15 @@
+{
+  "name": "pell-rsa-cloud",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Next Gen Cloud Security Using Pell-Based RSA with Homomorphic Encryption",
+  "scripts": {
+    "dev:server": "cd server && node index.js",
+    "dev:client": "cd client && npm run dev",
+    "build": "cd client && npm run build",
+    "vercel-build": "cd client && npm install && npm run build"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
