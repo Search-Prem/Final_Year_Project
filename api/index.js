@@ -47,7 +47,9 @@ const connectDB = async () => {
         }
         console.log('[Vercel] Connecting to MongoDB...');
         cached.promise = mongoose.connect(MONGO_URI, {
-            bufferCommands: false,
+            serverSelectionTimeoutMS: 20000,
+            connectTimeoutMS: 20000,
+            socketTimeoutMS: 45000,
         }).then((m) => {
             console.log('[Vercel] MongoDB connected successfully');
             return m;

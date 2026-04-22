@@ -21,7 +21,9 @@ const connectDB = async () => {
         console.log('MongoDB connecting to:', MONGO_URI.replace(/\/\/.*@/, '//<credentials>@'));
 
         cached.promise = mongoose.connect(MONGO_URI, {
-            bufferCommands: false,
+            serverSelectionTimeoutMS: 20000,
+            connectTimeoutMS: 20000,
+            socketTimeoutMS: 45000,
         }).then((mongoose) => {
             console.log('MongoDB Connected Successfully');
             return mongoose;
