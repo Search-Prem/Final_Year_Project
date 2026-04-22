@@ -1,8 +1,57 @@
+# Dependencies
 node_modules/
+client/node_modules/
+server/node_modules/
+
+# Environment files
 .env
+.env.local
+.env.production
+server/.env
+
+# Build outputs
 dist/
 build/
 coverage/
+client/dist/
+
+# Log files
+*.log
+error.log
+npm-debug.log*
+server/error.log
+
+# OS files
 .DS_Store
-client/node_modules/
-server/node_modules/
+Thumbs.db
+desktop.ini
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Database files
+*.sqlite
+server/database.sqlite
+server/*.sqlite
+
+# Package lock (optional — remove if you want to track it)
+package-lock.json
+server/package-lock.json
+client/package-lock.json
+
+# Generated documentation files
+code-explanation.txt
+necessary-softwares.txt
+requirements.txt
+source-code.txt
+
+# Test files
+test_crypto.js
+
+# Misc
+*.tgz
+.cache/

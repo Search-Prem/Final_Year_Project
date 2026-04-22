@@ -19,25 +19,54 @@ const DecryptionPanel = ({ onDecryptComplete }) => {
         if (!file) return;
 
         setUploadedFileName(file.name);
+        setError('');
+
+        // Clear previous values before parsing new file
+        setMessageId('');
+        setPrivateKeyD('');
+        setPrivateKeyP('');
+        setPrivateKeyQ('');
+
         const reader = new FileReader();
         reader.onload = (ev) => {
             try {
                 const content = ev.target.result;
+                console.log('File content:', content);
+
                 // Parse the TXT file format exported by sender
-                const lines = content.split('\n').map(l => l.trim());
+                // Handle both \r\n and \n line endings
+                const lines = content.split(/\r?\n/).map(l => l.trim());
+
+                let parsedMessageId = '';
+                let parsedD = '';
+                let parsedP = '';
+                let parsedQ = '';
 
                 for (const line of lines) {
                     if (line.startsWith('Message ID:')) {
-                        setMessageId(line.replace('Message ID:', '').trim());
+                        parsedMessageId = line.substring('Message ID:'.length).trim();
                     } else if (line.startsWith('Private Key (d):')) {
-                        setPrivateKeyD(line.replace('Private Key (d):', '').trim());
+                        parsedD = line.substring('Private Key (d):'.length).trim();
                     } else if (line.startsWith('Prime p:')) {
-                        setPrivateKeyP(line.replace('Prime p:', '').trim());
+                        parsedP = line.substring('Prime p:'.length).trim();
                     } else if (line.startsWith('Prime q:')) {
-                        setPrivateKeyQ(line.replace('Prime q:', '').trim());
+                        parsedQ = line.substring('Prime q:'.length).trim();
                     }
                 }
+
+                console.log('Parsed values from file:', { parsedMessageId, parsedD, parsedP, parsedQ });
+
+                // Set state with parsed values
+                if (parsedMessageId) setMessageId(parsedMessageId);
+                if (parsedD) setPrivateKeyD(parsedD);
+                if (parsedP) setPrivateKeyP(parsedP);
+                if (parsedQ) setPrivateKeyQ(parsedQ);
+
+                if (!parsedMessageId && !parsedD && !parsedP && !parsedQ) {
+                    setError('Could not find any valid fields in the file. Ensure it is a Pell-RSA export file.');
+                }
             } catch (parseErr) {
+                console.error('File parse error:', parseErr);
                 setError('Failed to parse file. Ensure it is a valid Pell-RSA export file.');
             }
         };
@@ -45,6 +74,9 @@ const DecryptionPanel = ({ onDecryptComplete }) => {
             setError('Failed to read file');
         };
         reader.readAsText(file);
+
+        // Reset file input so re-uploading the same file triggers onChange again
+        e.target.value = '';
     };
 
     const handleDecrypt = async () => {
